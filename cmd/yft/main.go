@@ -8,6 +8,7 @@ import (
 	"os"
 	"text/template"
 
+	"github.com/SeerUK/yft/pkg/tmplhelp"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -36,6 +37,10 @@ func render(input io.Reader, output io.Writer, templates ...string) error {
 	if err != nil {
 		return fmt.Errorf("error: Failed unmarshalling YAML input: %v", err)
 	}
+
+	tpl.Funcs(template.FuncMap{
+		"indent": tmplhelp.Indent,
+	})
 
 	err = tpl.Execute(output, values)
 	if err != nil {
