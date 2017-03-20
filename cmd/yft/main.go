@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/SeerUK/yft/pkg/tmplhelp"
+
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -22,7 +23,11 @@ func main() {
 
 // render the given template files using the given input, parsed as YAML for variables.
 func render(input io.Reader, output io.Writer, templates ...string) error {
-	tpl, err := template.ParseFiles(templates...)
+	funcMap := template.FuncMap{
+		"indent": tmplhelp.Indent,
+	}
+
+	tpl, err := template.New("").Funcs(funcMap).ParseFiles(templates...)
 	if err != nil {
 		return fmt.Errorf("error: Failed to parse template(s): %v", err)
 	}
@@ -38,13 +43,11 @@ func render(input io.Reader, output io.Writer, templates ...string) error {
 		return fmt.Errorf("error: Failed unmarshalling YAML input: %v", err)
 	}
 
-	tpl.Funcs(template.FuncMap{
-		"indent": tmplhelp.Indent,
-	})
-
-	err = tpl.Execute(output, values)
-	if err != nil {
-		return fmt.Errorf("error: Failed to parse template: %v", err)
+	for _, t := range tpl.Templates() {
+		err = tpl.ExecuteTemplate(output, t.Name(), values)
+		if err != nil {
+			return fmt.Errorf("error: Failed to parse template '%s': %v", t.Name(), err)
+		}
 	}
 
 	return nil
